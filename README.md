@@ -1,1 +1,5 @@
 # yolo_tooth_numbering
+目前的操作：
+render.py先進行渲染 有顏色00OMSZGW_lower_label.png跟沒有顏色00OMSZGW_lower_neutral.png各一張
+接著creare_yolo_gt.py用來產生yolo標註框.txt(可以去讀取color_utils.py中的FDI2color來對應標註框的fdi class名稱)
+yologtvis.py則是可以將原圖跟標註框疊合進行視覺化

@@ -1,5 +1,6 @@
 import math
 import os
+os.environ['PYOPENGL_PLATFORM'] = 'egl'
 import numpy as np
 import pyrender
 import trimesh
@@ -76,7 +77,7 @@ def calculate_optimal_distance(vertices, camera_direction, yfov, target_fill_rat
     return safe_distance
 
 
-def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85):
+def render_top_view(ply_path, img_save_dir, mask_save_dir, camera_params_save_dir, rend_size=(1024, 1024), fill_ratio=0.85):
     """
     從單一 .ply 檔案渲染兩張俯視影像：
     1. 純打光影像（無顏色）
@@ -89,7 +90,9 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85)
         fill_ratio: 模型填充比例 (0.0-1.0)，建議 0.85
     """
     base_name = os.path.basename(ply_path)[:-4]
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(img_save_dir, exist_ok=True)
+    os.makedirs(mask_save_dir, exist_ok=True)
+    os.makedirs(camera_params_save_dir, exist_ok=True)
 
     # 載入 .ply 檔案
     label_trimesh = trimesh.load(ply_path)
@@ -197,7 +200,7 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85)
     camera_node = scene_neutral.add(camera, pose=camera_pose)
     color_neutral, _ = r.render(scene_neutral)
     scene_neutral.remove_node(camera_node)
-    neutral_path = os.path.join(save_dir, f'{base_name}_neutral.png')
+    neutral_path = os.path.join(img_save_dir, f'{base_name}_neutral.png')
     Image.fromarray(color_neutral).save(neutral_path)
     print(f"Saved neutral image: {neutral_path}")
 
@@ -205,12 +208,12 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85)
     camera_node = label_scene.add(camera, pose=camera_pose)
     color_label, _ = r.render(label_scene, flags=pyrender.RenderFlags.SEG, seg_node_map=seg_node_map)
     label_scene.remove_node(camera_node)
-    label_path = os.path.join(save_dir, f'{base_name}_label.png')
+    label_path = os.path.join(mask_save_dir, f'{base_name}_label.png')
     Image.fromarray(color_label).save(label_path)
     print(f"Saved label image: {label_path}")
 
     # 儲存相機參數
-    json_path = os.path.join(save_dir, f'{base_name}_view.json')
+    json_path = os.path.join(camera_params_save_dir, f'{base_name}_view.json')
     with open(json_path, 'w') as f:
         json.dump(camera_params, f, indent=4)
     print(f"Saved camera parameters: {json_path}")
@@ -220,10 +223,9 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85)
 
 if __name__ == '__main__':
     ply_path = r'ply\00OMSZGW_lower\00OMSZGW_lower.ply'
-    save_dir = r'ply\00OMSZGW_lower'
+    mask_save_dir = r'E:\.datasets\yolo_numbering_dataset\render_mask'
+    img_save_dir = r'E:\.datasets\yolo_numbering_dataset\dataset\images'
+    camera_params_save_dir = r'E:\.datasets\yolo_numbering_dataset\camera_params'
     
     # 預設使用 85% 填充比例（推薦）
-    render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.95)
-    
-    # 如果需要更緊湊，可以改為 0.90 或 0.95
-    # render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.90)
+    render_top_view(ply_path, img_save_dir, mask_save_dir, camera_params_save_dir, rend_size=(1024, 1024), fill_ratio=0.95)
