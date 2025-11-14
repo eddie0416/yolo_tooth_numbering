@@ -4,7 +4,7 @@ from ultralytics import YOLO
 
 if __name__ == '__main__':
     # 載入預訓練模型
-    model = YOLO('yolo11n.yaml')  # 使用 nano 版本，速度快
+    model = YOLO('yolo11m.yaml')  # 使用 nano 版本，速度快
     
     # 開始訓練
     '''
@@ -33,10 +33,12 @@ if __name__ == '__main__':
         data='yolo_numbering_dataset/dataset_splited/data.yaml',
         epochs=100,
         imgsz=640,
-        batch=8,
+        batch=-1,
         device=0,
-        workers=0,
-        patience=50
+        workers=8,
+        patience=50,
+        amp=True,
+        cache=True
     )
     
     print("訓練完成！")
