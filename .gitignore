@@ -5,7 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
-
+ply/
+yolo_numbering_dataset
+*.pt
 # Distribution / packaging
 .Python
 build/

@@ -7,6 +7,8 @@ import trimesh
 import json
 from PIL import Image
 from color_utils import color2label
+import glob
+from pathlib import Path
 
 
 def m3dLookAt(eye, target, up):
@@ -220,12 +222,29 @@ def render_top_view(ply_path, img_save_dir, mask_save_dir, camera_params_save_di
 
     r.delete()
 
-
+'''
 if __name__ == '__main__':
-    ply_path = r'ply\00OMSZGW_lower\00OMSZGW_lower.ply'
-    mask_save_dir = r'E:\.datasets\yolo_numbering_dataset\render_mask'
-    img_save_dir = r'E:\.datasets\yolo_numbering_dataset\dataset\images'
-    camera_params_save_dir = r'E:\.datasets\yolo_numbering_dataset\camera_params'
+    ply_path = 'ply/00OMSZGW_lower.ply'
+    mask_save_dir = 'yolo_numbering_dataset/render_mask'
+    img_save_dir = 'yolo_numbering_dataset/dataset/images'
+    camera_params_save_dir = 'yolo_numbering_dataset/camera_params'
     
     # 預設使用 85% 填充比例（推薦）
     render_top_view(ply_path, img_save_dir, mask_save_dir, camera_params_save_dir, rend_size=(1024, 1024), fill_ratio=0.95)
+'''
+if __name__ == '__main__':
+    ply_dir = 'ply'
+    mask_save_dir = 'yolo_numbering_dataset/render_mask'
+    img_save_dir = 'yolo_numbering_dataset/dataset/images'
+    camera_params_save_dir = 'yolo_numbering_dataset/camera_params'
+    
+    # 找出所有 .ply 檔案
+    ply_files = glob.glob(f'{ply_dir}/*.ply')
+    
+    print(f"找到 {len(ply_files)} 個 .ply 檔案")
+    
+    for ply_path in ply_files:
+        print(f"處理: {ply_path}")
+        render_top_view(ply_path, img_save_dir, mask_save_dir, 
+                       camera_params_save_dir, rend_size=(1024, 1024), 
+                       fill_ratio=0.95)

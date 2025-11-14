@@ -3,6 +3,8 @@ from PIL import Image
 from collections import Counter
 import os
 from color_utils import FDI2color
+import glob
+from pathlib import Path
 
 def create_yolo_annotation_from_mask(image_path, output_dir=None, pixel_threshold=100):
     """
@@ -112,7 +114,21 @@ def create_yolo_annotation_from_mask(image_path, output_dir=None, pixel_threshol
     print(f"共標註 {len(annotations)} 個物件（牙齒）")
     
     return annotations, output_file
+'''
+image_path = r'ply\00OMSZGW_lower\00OMSZGW_lower_label.png'
+output_dir = 'yolo_numbering_dataset/dataset/labels'
 
-annotations, txt_file = create_yolo_annotation_from_mask(   
-    r'ply\00OMSZGW_lower\00OMSZGW_lower_label.png'
-)
+annotations, txt_file = create_yolo_annotation_from_mask(image_path, output_dir)
+'''
+mask_dir = Path('yolo_numbering_dataset/render_mask')
+output_dir = 'yolo_numbering_dataset/dataset/labels'
+
+# 找出所有 _label.png 檔案
+label_images = list(mask_dir.glob('**/*_label.png'))
+
+print(f"找到 {len(label_images)} 個 _label.png 檔案")
+
+for image_path in label_images:
+    print(f"處理: {image_path}")
+    annotations, txt_file = create_yolo_annotation_from_mask(str(image_path), output_dir)
+    print(f"已產生標註檔: {txt_file}")
