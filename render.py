@@ -24,11 +24,69 @@ def m3dLookAt(eye, target, up):
     ])
 
 
-def render_top_view(ply_path, save_dir, rend_size=(1024, 1024)):
+def calculate_optimal_distance(vertices, camera_direction, yfov, target_fill_ratio=0.85):
+    """
+    計算最佳相機距離，使模型在影像中佔據指定比例
+    
+    Args:
+        vertices: 模型頂點 (N×3 numpy array)
+        camera_direction: 相機朝向（單位向量）
+        yfov: 垂直視場角（弧度）
+        target_fill_ratio: 目標填充比例（0.85 表示佔據 85% 影像）
+    
+    Returns:
+        optimal_distance: 最佳相機距離
+    """
+    center = np.mean(vertices, axis=0)
+    
+    # 構建相機座標系（假設相機朝 -Z 看，Y 軸朝上）
+    cam_z = -camera_direction / np.linalg.norm(camera_direction)
+    
+    # 選擇合適的 up 向量（避免與 cam_z 平行）
+    if abs(np.dot(cam_z, [0, 1, 0])) > 0.9:
+        up_temp = [1, 0, 0]
+    else:
+        up_temp = [0, 1, 0]
+    
+    cam_x = np.cross(up_temp, cam_z)
+    cam_x = cam_x / np.linalg.norm(cam_x)
+    cam_y = np.cross(cam_z, cam_x)
+    
+    # 將頂點轉換到相機座標系
+    vertices_centered = vertices - center
+    vertices_cam = np.stack([
+        np.dot(vertices_centered, cam_x),
+        np.dot(vertices_centered, cam_y),
+        np.dot(vertices_centered, cam_z)
+    ], axis=1)
+    
+    # 計算投影後的包圍盒
+    x_range = np.max(vertices_cam[:, 0]) - np.min(vertices_cam[:, 0])
+    y_range = np.max(vertices_cam[:, 1]) - np.min(vertices_cam[:, 1])
+    z_depth = np.max(vertices_cam[:, 2]) - np.min(vertices_cam[:, 2])
+    
+    # 根據視場角計算所需距離
+    # distance = (size / 2) / tan(fov / 2) / fill_ratio
+    max_size = max(x_range, y_range)
+    required_distance = (max_size / 2) / np.tan(yfov / 2) / target_fill_ratio
+    
+    # 加上模型深度的一半，確保前後都不被裁切
+    safe_distance = required_distance + z_depth / 2
+    
+    return safe_distance
+
+
+def render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.85):
     """
     從單一 .ply 檔案渲染兩張俯視影像：
     1. 純打光影像（無顏色）
     2. 語義標籤影像（帶顏色）
+    
+    Args:
+        ply_path: .ply 檔案路徑
+        save_dir: 輸出目錄
+        rend_size: 渲染影像尺寸 (高, 寬)
+        fill_ratio: 模型填充比例 (0.0-1.0)，建議 0.85
     """
     base_name = os.path.basename(ply_path)[:-4]
     os.makedirs(save_dir, exist_ok=True)
@@ -41,17 +99,29 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024)):
     minCoord = np.min(vertices, axis=0)
     maxCoord = np.max(vertices, axis=0)
     meanCoord = np.mean(vertices, axis=0)
-    z_len = maxCoord[2] - minCoord[2]
-    radius = np.sqrt(np.sum((maxCoord - meanCoord) ** 2)) * 1.2
+    
+    # 使用新的最佳距離計算方法
+    yfov = np.pi / 2
+    camera_direction = np.array([0, 0, -1])  # 俯視朝下
+    optimal_distance = calculate_optimal_distance(
+        vertices, camera_direction, yfov, fill_ratio
+    )
+    
+    print(f"Model center: {meanCoord}")
+    print(f"Model bounds: {maxCoord - minCoord}")
+    print(f"Optimal camera distance: {optimal_distance:.2f} (fill ratio: {fill_ratio})")
 
     # 設定俯視相機位置（從上往下看）
-    camera_pos = meanCoord + np.asarray([0, 0, radius], dtype=float)
+    camera_pos = meanCoord + np.asarray([0, 0, optimal_distance], dtype=float)
     camera_pose = m3dLookAt(camera_pos, meanCoord, np.asarray([0, 1, 0], dtype=float))
 
     # 計算相機參數（與原始程式碼相同的格式）
     Rt = np.eye(4)
     Rt[:3, :3] = camera_pose[:3, :3].T
     Rt[:3, 3] = -np.dot(camera_pose[:3, :3].T, camera_pose[:3, 3])
+    
+    # 清理浮點數誤差
+    Rt[np.abs(Rt) < 1e-10] = 0
     
     f_y = (rend_size[0] / 2) / math.tan(np.pi / 2 / 2)
     f_x = f_y * 1.0
@@ -151,4 +221,9 @@ def render_top_view(ply_path, save_dir, rend_size=(1024, 1024)):
 if __name__ == '__main__':
     ply_path = r'ply\00OMSZGW_lower\00OMSZGW_lower.ply'
     save_dir = r'ply\00OMSZGW_lower'
-    render_top_view(ply_path, save_dir, rend_size=(1024, 1024))
+    
+    # 預設使用 85% 填充比例（推薦）
+    render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.95)
+    
+    # 如果需要更緊湊，可以改為 0.90 或 0.95
+    # render_top_view(ply_path, save_dir, rend_size=(1024, 1024), fill_ratio=0.90)
