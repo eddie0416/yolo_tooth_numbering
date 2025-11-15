@@ -4,7 +4,7 @@ from ultralytics import YOLO
 
 if __name__ == '__main__':
     # 載入預訓練模型
-    model = YOLO('yolo11m.yaml')  # 使用 nano 版本，速度快
+    model = YOLO('yolo11l.pt')  # 使用 nano 版本，速度快
     
     # 開始訓練
     '''
