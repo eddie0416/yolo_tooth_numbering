@@ -1,10 +1,10 @@
 from ultralytics import YOLO
 
 # 載入模型
-model = YOLO("runs/detect/l.pt/weights/best.pt")
+model = YOLO("runs/detect/l.pt_epoch500_1024/weights/best.pt")
 
 # 指定要推論的圖片路徑
-img_path = "yolo_numbering_dataset/images/0EJBIPTC_upper_neutral.png"
+img_path = "yolo_numbering_dataset/images/4W9X0QQI_upper_neutral.png"
 
 # 執行推論
 results = model(img_path)  # results 是 Results 物件列表

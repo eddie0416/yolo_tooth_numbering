@@ -1,11 +1,13 @@
 import warnings
 warnings.filterwarnings('ignore')
 from ultralytics import YOLO
+import yaml
 
 if __name__ == '__main__':
     # 載入預訓練模型
-    model = YOLO('yolo11l.pt')  # 使用 nano 版本，速度快
-    
+    model = YOLO('yolo11m.pt')  # 使用 nano 版本，速度快
+    with open("runs/detect/tune/best_hyperparameters.yaml", "r") as f:
+        hyp = yaml.safe_load(f)
     # 開始訓練
     '''
     results = model.train(
@@ -31,14 +33,15 @@ if __name__ == '__main__':
     '''
     results = model.train(
         data='yolo_numbering_dataset/dataset_splited/data.yaml',
-        epochs=100,
-        imgsz=640,
+        epochs=350,
+        imgsz=1024,
         batch=-1,
         device=0,
         workers=8,
         patience=50,
         amp=True,
-        cache=True
+        cache=True,
+        **hyp
     )
     
     print("訓練完成！")
