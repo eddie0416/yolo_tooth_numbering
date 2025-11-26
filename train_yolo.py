@@ -6,7 +6,7 @@ import yaml
 if __name__ == '__main__':
     # 載入預訓練模型
     model = YOLO('yolo11m.pt')  # 使用 nano 版本，速度快
-    with open("runs/detect/tune/best_hyperparameters.yaml", "r") as f:
+    with open("best_hyperparameters.yaml", "r") as f:
         hyp = yaml.safe_load(f)
     # 開始訓練
     '''
@@ -43,6 +43,4 @@ if __name__ == '__main__':
         cache=True,
         **hyp
     )
-    
-    print("訓練完成！")
-    print(f"最佳模型保存在: runs/train/tooth_detection/weights/best.pt")
+ 

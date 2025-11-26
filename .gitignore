@@ -5,6 +5,7 @@ __pycache__/
 runs/detect/train/weights/
 # C extensions
 *.so
+runs/
 ply/
 yolo_numbering_dataset
 *.pt
