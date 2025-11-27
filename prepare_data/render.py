@@ -260,7 +260,7 @@ if __name__ == '__main__':
                        camera_params_save_dir, rend_size=(1024, 1024), 
                        fill_ratio=0.95)
     '''
-    ply_path = '2025_1126_upper.ply'
+    ply_path = '00240433LowerJaw.ply'
     img_save_dir = './'
     render_top_view(ply_path, img_save_dir, 
                render_mask=False, save_camera_params=False)

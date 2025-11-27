@@ -175,6 +175,6 @@ def visualize_with_transparency(image_path, annotation_path, output_path=None, b
     return output_path
 
 output = visualize_yolo_annotations(
-    r'ply\00OMSZGW_lower\00OMSZGW_lower_neutral.png',
-    r'ply\00OMSZGW_lower\00OMSZGW_lower.txt'
+    'yolo_numbering_dataset/images/0AAQ6BO3_upper_neutral.png',
+    'yolo_numbering_dataset/labels/0AAQ6BO3_upper.txt'
 )
