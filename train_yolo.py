@@ -5,7 +5,7 @@ import yaml
 
 if __name__ == '__main__':
     # 載入預訓練模型
-    model = YOLO('yolo11m.pt')  # 使用 nano 版本，速度快
+    model = YOLO('yolo11l.pt')  # 使用 nano 版本，速度快
     with open("best_hyperparameters.yaml", "r") as f:
         hyp = yaml.safe_load(f)
     # 開始訓練
@@ -32,6 +32,7 @@ if __name__ == '__main__':
     )
     '''
     results = model.train(
+        #name='m.pt_closemosaic',
         data='yolo_numbering_dataset/dataset_splited/data.yaml',
         epochs=350,
         imgsz=1024,
@@ -41,6 +42,8 @@ if __name__ == '__main__':
         patience=50,
         amp=True,
         cache=True,
-        **hyp
+        #auto_augment=null, #這個是gemini建議關閉 因為我的照片場景相對單純 不需要暴力的隨機增強
+        #paste_in=0,
+        #**hyp
     )
  

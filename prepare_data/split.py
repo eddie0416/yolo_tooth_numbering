@@ -67,7 +67,7 @@ def split_train_val(images_dir, labels_dir, output_dir, val_ratio=0.2):
 
 if __name__ == '__main__':
     split_train_val(
-        images_dir='/home/q56144107/yolo_tooth_numbering/yolo_numbering_dataset/images',
+        images_dir='/home/q56144107/yolo_tooth_numbering/yolo_numbering_dataset/dataset/images',
         labels_dir='/home/q56144107/yolo_tooth_numbering/yolo_numbering_dataset/labels',
         output_dir='/home/q56144107/yolo_tooth_numbering/yolo_numbering_dataset/dataset_splited',
         val_ratio=0.2

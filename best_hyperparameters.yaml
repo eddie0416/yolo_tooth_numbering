@@ -23,7 +23,7 @@ perspective: 0.0
 flipud: 0.0
 fliplr: 0.0
 bgr: 0.0
-mosaic: 0.81998
+mosaic: 0.0
 mixup: 0.0
 cutmix: 0.0
 copy_paste: 0.0

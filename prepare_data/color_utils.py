@@ -1,3 +1,4 @@
+# 這個是有經過修正過後的color mapping
 color2label = {
     # upper label 1-8 UL1-8, label 9-16 UR1-8
     (170, 255, 127): ("aaff7f", "UL1", 1), #fdi 21
