@@ -243,6 +243,7 @@ def render_top_view(ply_path, img_save_dir,
     r.delete()
 
 if __name__ == '__main__':
+    '''
     ply_dir = 'ply'
     mask_save_dir = 'yolo_numbering_dataset/render_mask'
     img_save_dir = 'yolo_numbering_dataset/dataset/images'
@@ -263,13 +264,10 @@ if __name__ == '__main__':
             rend_size=(1024, 1024),
             fill_ratio=0.95
         )
-        # render_top_view(ply_path, img_save_dir, mask_save_dir, 
-        #                camera_params_save_dir, rend_size=(1024, 1024), 
-        #                fill_ratio=0.95)
     '''
     # 以下是推論單一影像之作法
-    ply_path = '00240433LowerJaw.ply'
+    ply_path = 'uninference_tooth/00240433LowerJaw.ply'
     img_save_dir = './'
     render_top_view(ply_path, img_save_dir, 
                render_mask=False, save_camera_params=False)
-    '''
+    

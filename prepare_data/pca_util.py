@@ -108,7 +108,7 @@ def align_mesh_with_pca(source_obj_path, output_obj_path):
     return aligned_mesh
 
 if __name__ == "__main__":
-    source_path = "00240433LowerJaw.stl"
-    output_path = "00240433LowerJaw.ply"
+    source_path = "uninference_tooth/00240433UpperJaw.stl"
+    output_path = "uninference_tooth/00240433UpperJaw.ply"
 
     align_mesh_with_pca(source_path, output_path)

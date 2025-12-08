@@ -1,0 +1,27 @@
+#m.pt 用1024下去tune 已經修正pca鏡像問題
+lr0: 0.00414
+lrf: 0.00608
+momentum: 0.94682
+weight_decay: 0.00082
+warmup_epochs: 4.24246
+warmup_momentum: 0.84269
+box: 10.79574
+cls: 0.46652
+dfl: 2.03977
+hsv_h: 0.01955
+hsv_s: 0.77051
+hsv_v: 0.47091
+degrees: 0.0
+translate: 0.14312
+scale: 0.58738
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.1162
+#fliplr: 0
+bgr: 0.0
+mosaic: 0.65228
+mixup: 0.0
+cutmix: 0.0
+copy_paste: 0.0
+close_mosaic: 7

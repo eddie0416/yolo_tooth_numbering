@@ -1,0 +1,32 @@
+# 300/300 iterations complete ✅ (164448.35s)
+# Results saved to /home/q56144107/yolo_tooth_numbering/runs/detect/tune
+# Best fitness=0.93651 observed at iteration 293
+# Best fitness metrics are {'metrics/precision(B)': 0.95941, 'metrics/recall(B)': 0.93555, 'metrics/mAP50(B)': 0.96851, 'metrics/mAP50-95(B)': 0.93651, 'val/box_loss': 0.25537, 'val/cls_loss': 0.27237, 'val/dfl_loss': 1.8193, 'fitness': 0.93651}
+# Best fitness model is /home/q56144107/yolo_tooth_numbering/runs/detect/train5
+#修正鏡像問題 s.pt 影像大小1024
+lr0: 0.01192
+lrf: 0.0131
+momentum: 0.91818
+weight_decay: 0.00066
+warmup_epochs: 4.15952
+warmup_momentum: 0.91667
+box: 7.32592
+cls: 0.47061
+dfl: 3.45356
+hsv_h: 0.01246
+hsv_s: 0.42987
+hsv_v: 0.8209
+degrees: 0.0
+translate: 0.14566
+scale: 0.6092
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+#fliplr: 0.07997
+fliplr: 0.0
+bgr: 0.0
+mosaic: 0.74985
+mixup: 0.0
+cutmix: 0.0
+copy_paste: 0.0
+close_mosaic: 10
