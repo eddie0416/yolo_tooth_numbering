@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
 # 載入模型
-model = YOLO("runs/detect/s_using_m.autotune/weights/best.pt")
+model = YOLO("runs/detect/m_using_m.autotune_dataaugmented/weights/best.pt")
 
 # 四張影像路徑
 
@@ -20,11 +20,12 @@ img_paths = [
 ]
 '''
 
+
 # 逐張推論
 for img_path in img_paths:
     print(f"\n=== Inference on: {img_path} ===")
     
-    results = model(img_path)  # results 是 Results 物件列表
+    results = model(img_path, agnostic_nms=True)  # results 是 Results 物件列表
     
     for r in results:
         print("boxes:", r.boxes)   # 預測框資訊

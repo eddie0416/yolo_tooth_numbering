@@ -1,11 +1,13 @@
 import warnings
 warnings.filterwarnings('ignore')
-from ultralytics import YOLO
+from ultralytics import YOLO, RTDETR
 import yaml
 
 if __name__ == '__main__':
     # 載入預訓練模型
-    model = YOLO('yolo11s.pt')  # 使用 nano 版本，速度快
+    #model = YOLO('yolo11m.pt')  # 使用 nano 版本，速度快
+    #model = RTDETR("rtdetr-l.pt")
+    model = YOLO('yolo12l.pt') 
     with open("106_tune.yaml", "r") as f:
         hyp = yaml.safe_load(f)
     # 開始訓練
@@ -32,8 +34,8 @@ if __name__ == '__main__':
     )
     '''
     results = model.train(
-        name='s_using_m.autotune',
-        data='yolo_numbering_dataset/dataset_splited/data.yaml',
+        name='yolo12l',
+        data='yolo_numbering_dataset/dataset_splited_augmented/data.yaml',
         epochs=350,
         imgsz=1024,
         batch=-1,
