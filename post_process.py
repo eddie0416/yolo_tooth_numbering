@@ -3,7 +3,7 @@ import numpy as np
 
 # 載入模型和推論
 model = YOLO('runs/detect/m_using_m.autotune_dataaugmented/weights/best.pt')
-img_path = 'uninference_tooth/00240433UpperJaw_neutral.png'
+img_path = 'uninference_tooth/00240433LowerJaw_neutral.png'
 #results = model(img_path, agnostic_nms=True)
 results = model.predict(img_path, classes="soft", agnostic_nms=True) # pip install git+https://github.com/ultralytics/ultralytics@exp-nms 可以顯示bbox每個class的conf
 '''
@@ -156,7 +156,7 @@ TEMPLATE = {
     'upper': [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
     'lower': [38, 37, 36, 35, 34, 33, 32, 31, 41, 42, 43, 44, 45, 46, 47, 48]
 }
-
+'''
 def run_viterbi_alignment(prob_matrix, jaw_type='lower'):
     """
     prob_matrix: shape (N, 16), 你的機率矩陣
@@ -246,6 +246,104 @@ def run_viterbi_alignment(prob_matrix, jaw_type='lower'):
     final_fdi_labels.reverse()
     assigned_indices.reverse()
     
+    return final_fdi_labels, assigned_indices
+'''
+def run_viterbi_alignment(prob_matrix, jaw_type='lower', print_dp_path=True):
+    """
+    prob_matrix: shape (N, 16), 你的機率矩陣
+    jaw_type: 'upper' 或 'lower'，用來決定輸出的 FDI 編號
+    print_dp_path: 是否印出 DP 與 PATH 矩陣
+    """
+    N, M = prob_matrix.shape
+    template_fdi = TEMPLATE[jaw_type]
+
+    GAP_PENALTY = 0.05
+
+    dp = np.full((N, M), -1e9, dtype=np.float64)
+    path = np.full((N, M), -1, dtype=int)
+
+    # --- 1. 初始化 (Base Case) ---
+    for j in range(M):
+        dp[0][j] = prob_matrix[0][j]
+
+    # --- 2. 遞推 (Recursion) ---
+    for i in range(1, N):
+        for j in range(M):
+
+            best_prev_score = -1e9
+            best_k = -1
+
+            search_start = max(0, j - 6)
+
+            for k in range(search_start, j):
+                gap_count = (j - k) - 1
+                penalty = gap_count * GAP_PENALTY
+
+                score = dp[i - 1][k] - penalty
+
+                if score > best_prev_score:
+                    best_prev_score = score
+                    best_k = k
+
+            if best_k != -1:
+                dp[i][j] = best_prev_score + prob_matrix[i][j]
+                path[i][j] = best_k
+
+    # --- 3. 回溯 (Backtracking) ---
+    last_bbox_idx = N - 1
+    best_last_col = int(np.argmax(dp[last_bbox_idx, :]))
+
+    final_fdi_labels = []
+    assigned_indices = []
+    curr_col = best_last_col
+
+    for i in range(N - 1, -1, -1):
+        fdi = template_fdi[curr_col]
+        final_fdi_labels.append(fdi)
+        assigned_indices.append(curr_col)
+
+        prev_col = path[i][curr_col]
+        if prev_col == -1 and i > 0:
+            print(f"Warning: Path broken at step {i}")
+            break
+        curr_col = prev_col
+
+    final_fdi_labels.reverse()
+    assigned_indices.reverse()
+
+    # --- 4. 印出 DP / PATH 矩陣（仿照 prob_matrix 的表格形式） ---
+    if print_dp_path:
+        headers = [f"fdi_{x}" for x in template_fdi]
+
+        # (A) DP 矩陣
+        header = f"{'idx':<6}" + "".join([f"{name:<10}" for name in headers])
+        print("\n=== DP matrix (cumulative score) ===")
+        print(header)
+        print("-" * len(header))
+        for i in range(N):
+            row_str = f"{i:<6}"
+            for j in range(M):
+                v = dp[i, j]
+                if v < -1e8:  # 視為 -INF（不可達）
+                    row_str += f"{'-INF':<10}"
+                else:
+                    row_str += f"{v:<10.4f}"
+            print(row_str)
+
+        # (B) PATH 矩陣：顯示「上一個狀態的 FDI」（比顯示 k index 好懂）
+        print("\n=== PATH matrix (prev state as FDI) ===")
+        print(header)
+        print("-" * len(header))
+        for i in range(N):
+            row_str = f"{i:<6}"
+            for j in range(M):
+                k = path[i, j]
+                if k == -1:
+                    row_str += f"{'-':<10}"
+                else:
+                    row_str += f"{str(template_fdi[k]):<10}"
+            print(row_str)
+
     return final_fdi_labels, assigned_indices
 
 # --- 測試執行 ---

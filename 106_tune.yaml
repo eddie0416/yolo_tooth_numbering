@@ -17,8 +17,8 @@ scale: 0.58738
 shear: 0.0
 perspective: 0.0
 flipud: 0.0
-fliplr: 0.1162
-#fliplr: 0
+#fliplr: 0.1162
+fliplr: 0
 bgr: 0.0
 mosaic: 0.65228
 mixup: 0.0

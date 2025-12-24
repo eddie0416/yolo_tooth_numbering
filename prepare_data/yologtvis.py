@@ -94,8 +94,8 @@ def visualize_yolo_annotations(image_path, annotation_path, data_yaml,
 
 
 output = visualize_yolo_annotations(
-    'yolo_numbering_dataset/dataset_splited_augmented/images/train/0EAKT1CU_lower.png',
-    'yolo_numbering_dataset/dataset_splited_augmented/labels/train/0EAKT1CU_lower.txt',
+    'yolo_numbering_dataset/dataset_splited_augmented/images/val/Z5SBGG6H_upper.png',
+    'yolo_numbering_dataset/dataset_splited_augmented/labels/val/Z5SBGG6H_upper.txt',
     'yolo_numbering_dataset/dataset_splited_augmented/data.yaml',
-    '0EAKT1CU_lower_annotated.png'
+    'Z5SBGG6H_upper_annotated.png'
 )

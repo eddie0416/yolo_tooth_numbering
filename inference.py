@@ -21,6 +21,7 @@ img_paths = [
 '''
 
 
+
 # 逐張推論
 for img_path in img_paths:
     print(f"\n=== Inference on: {img_path} ===")
@@ -32,4 +33,4 @@ for img_path in img_paths:
         print("probs:", r.probs)   # 類別機率（如果你的模型有 classification head 才會有）
         
         # 存推論結果（預設會存到 runs/ 之類的資料夾）
-        r.save()
+        r.save(labels=False, conf=False)

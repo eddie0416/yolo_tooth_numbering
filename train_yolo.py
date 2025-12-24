@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # 載入預訓練模型
     #model = YOLO('yolo11m.pt')  # 使用 nano 版本，速度快
     #model = RTDETR("rtdetr-l.pt")
-    model = YOLO('yolo12l.pt') 
+    model = YOLO('yolo12n.pt') 
     with open("106_tune.yaml", "r") as f:
         hyp = yaml.safe_load(f)
     # 開始訓練
@@ -34,11 +34,11 @@ if __name__ == '__main__':
     )
     '''
     results = model.train(
-        name='yolo12l',
+        name='yolo12n',
         data='yolo_numbering_dataset/dataset_splited_augmented/data.yaml',
         epochs=350,
         imgsz=1024,
-        batch=-1,
+        batch=20,
         device=0,
         workers=8,
         patience=50,
