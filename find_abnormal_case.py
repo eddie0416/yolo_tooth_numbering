@@ -9,167 +9,10 @@ import cv2
 from ultralytics import YOLO
 from tqdm import tqdm
 from post_process import run_viterbi_alignment
-
-'''
-def get_tooth_sequences(model, img_path, label_path=None):
-    """
-    輸入影像與 Label路徑，回傳經過「空間排序」且「轉換為FDI數值」的序列。
-    
-    Args:
-        model: YOLO 模型物件
-        img_path: 影像檔案路徑
-        label_path: (Optional) GT label txt 的路徑
-        
-    Returns:
-        dict: {
-            "pred_seq": [38, 37, ...],      # 預測的 FDI 序列 (int)
-            "gt_seq": [38, 37, ...],        # GT 的 FDI 序列 (int)
-            "pred_conf": [0.95, 0.88...],   # 對應的信心度
-            "jaw_type": "upper" or "lower", # 根據預測判斷
-            "status": "ok" or "error"
-        }
-    """
-
-    # 1. 定義類別映射 (根據你的 data.yaml)
-    # 格式: class_id -> fdi_int
-    # 0->11, ..., 7->18, 8->21, ..., 15->28 (上顎 0-15)
-    # 16->31, ..., 23->38, 24->41, ..., 31->48 (下顎 16-31)
-    
-    FDI_MAP = {}
-    # 構建 Mapping 表
-    raw_names = {
-        0: 'fdi_11', 1: 'fdi_12', 2: 'fdi_13', 3: 'fdi_14', 4: 'fdi_15', 5: 'fdi_16', 6: 'fdi_17', 7: 'fdi_18',
-        8: 'fdi_21', 9: 'fdi_22', 10: 'fdi_23', 11: 'fdi_24', 12: 'fdi_25', 13: 'fdi_26', 14: 'fdi_27', 15: 'fdi_28',
-        16: 'fdi_31', 17: 'fdi_32', 18: 'fdi_33', 19: 'fdi_34', 20: 'fdi_35', 21: 'fdi_36', 22: 'fdi_37', 23: 'fdi_38',
-        24: 'fdi_41', 25: 'fdi_42', 26: 'fdi_43', 27: 'fdi_44', 28: 'fdi_45', 29: 'fdi_46', 30: 'fdi_47', 31: 'fdi_48'
-    }
-    
-    for k, v in raw_names.items():
-        FDI_MAP[k] = int(v.split('_')[1]) # 取出 'fdi_11' -> 11
-
-    # --- 內部 Helper: 幾何排序邏輯 (Pred/GT 共用) ---
-    def _sort_spatially(items):
-        """
-        items: list of [cx, cy, class_id, extra_data...]
-        return: sorted list of [class_id, extra_data...]
-        """
-        if len(items) == 0: return []
-        
-        # 轉 numpy 方便計算
-        points = np.array([x[:2] for x in items]) # 取 cx, cy
-        centroid = np.mean(points, axis=0)
-        
-        # 計算角度
-        angles = []
-        for i, point in enumerate(points):
-            angle = np.arctan2(point[1] - centroid[1], point[0] - centroid[0])
-            angles.append((i, angle))
-            
-        # 按角度排序
-        angles_sorted = sorted(angles, key=lambda x: x[1])
-        
-        # 找最大間隙 (斷點)
-        max_gap = 0
-        gap_idx = 0
-        N = len(angles_sorted)
-        if N > 1:
-            for i in range(N):
-                next_i = (i + 1) % N
-                gap = angles_sorted[next_i][1] - angles_sorted[i][1]
-                if gap < 0: gap += 2 * np.pi
-                if gap > max_gap:
-                    max_gap = gap
-                    gap_idx = next_i
-        
-        # 重新排列並輸出
-        sorted_result = []
-        for i in range(N):
-            idx = (gap_idx + i) % N
-            original_idx = angles_sorted[idx][0]
-            # items[original_idx][2:] 代表回傳 class_id 及其後的資料
-            sorted_result.append(items[original_idx][2:]) 
-            
-        return sorted_result
-
-    # ==========================================
-    # A. 執行預測 (Prediction)
-    # ==========================================
-    # verbose=False 關閉沒必要的 print
-    results = model.predict(img_path, classes="soft", agnostic_nms=True, verbose=False)
-    
-    # 取得原圖尺寸 (為了還原 GT 座標)
-    orig_h, orig_w = results[0].orig_shape[:2]
-    
-    pred_items = [] # 格式: [cx, cy, class_id, conf]
-    
-    count_upper = 0
-    count_lower = 0
-    
-    for box in results[0].boxes:
-        xyxy = box.xyxy[0].cpu().numpy()
-        cx = (xyxy[0] + xyxy[2]) / 2
-        cy = (xyxy[1] + xyxy[3]) / 2
-        #print(f"DEBUG: box.cls[0] = {box.cls[0]}, type = {type(box.cls[0])}")
-        c_id = int(box.cls[0])
-        conf = float(max(box.conf[0])) if hasattr(box.conf[0], '__iter__') else float(box.conf[0])
-        #conf = float(box.conf)
-        
-        pred_items.append([cx, cy, c_id, conf])
-        
-        # 顎別統計 (根據 yaml: 0-15上, 16-31下)
-        if c_id >= 16: count_lower += 1
-        else: count_upper += 1
-
-    jaw_type = 'upper' if count_upper > count_lower else 'lower'
-    
-    # 進行排序: sort之後的格式是 [[class_id, conf], [class_id, conf]...]
-    sorted_pred_raw = _sort_spatially(pred_items)
-    
-    # 轉換成單純的 FDI List 和 Conf List
-    pred_seq = [FDI_MAP[item[0]] for item in sorted_pred_raw]
-    pred_conf = [item[1] for item in sorted_pred_raw]
-
-    # ==========================================
-    # B. 處理 GT (Ground Truth)
-    # ==========================================
-    gt_seq = []
-    
-    if label_path and os.path.exists(label_path):
-        gt_items = [] # 格式: [cx, cy, class_id]
-        
-        with open(label_path, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                parts = line.strip().split()
-                if len(parts) >= 5:
-                    c_id = int(parts[0])
-                    # YOLO 格式是 normalized (0~1)
-                    n_cx = float(parts[1])
-                    n_cy = float(parts[2])
-                    
-                    # 關鍵：為了跟 Pred 用同樣的邏輯排序，必須還原成像素座標
-                    # (其實不還原只用 normalized 算角度也可以，但為了避免長寬比造成質心偏移，統一座標系最保險)
-                    cx = n_cx * orig_w
-                    cy = n_cy * orig_h
-                    
-                    gt_items.append([cx, cy, c_id])
-        
-        # 進行排序 (使用同一套 Helper)
-        sorted_gt_raw = _sort_spatially(gt_items)
-        
-        # 轉換成 FDI List
-        gt_seq = [FDI_MAP[item[0]] for item in sorted_gt_raw]
-
-    return {
-        "pred_seq": pred_seq,
-        "gt_seq": gt_seq,
-        "pred_conf": pred_conf,
-        "jaw_type": jaw_type
-    }
-'''
 import numpy as np
-import os
-from ultralytics import YOLO
+import matplotlib.pyplot as plt
+import csv
+import json
 
 def get_tooth_sequences(model, img_path, label_path=None):
     # Mapping 表 (照舊)
@@ -308,33 +151,78 @@ def get_tooth_sequences(model, img_path, label_path=None):
         "jaw_type": jaw_type
     }
 
-'''
-def get_tooth_sequences(model, img_path, label_path=None):
-    return {
-        "pred_seq": pred_seq,
-        "gt_seq": gt_seq,
-        "prob_matrix": prob_matrix,
-        "jaw_type": jaw_type
-    }
-    print pred_seq：[16, 15, 14, 13, 12, 11, 21, 22, 26, 27]
+IMG_DIR = Path("yolo_numbering_dataset/dataset_splited/images/val")
+LBL_DIR = Path("yolo_numbering_dataset/dataset_splited/labels/val")
+MODEL_PATH = "runs/detect/m_using_m.autotune_dataaugmented/weights/best.pt"
 
-def run_viterbi_alignment(prob_matrix, jaw_type='lower', print_dp_path=True):
-    return final_fdi_labels, assigned_indices
-    print(final_fdi_labels)：[38, 34, 33, 32, 31, 41, 42, 43, 44, 45, 46, 47]
-'''
+IMG_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 
-img_path = 'yolo_numbering_dataset/dataset_splited/images/val/0AAQ6BO3_upper.png'
-label_path = 'yolo_numbering_dataset/dataset_splited/labels/val/0AAQ6BO3_upper.txt'
-model_path = 'runs/detect/m_using_m.autotune_dataaugmented/weights/best.pt'
-model = YOLO(model_path)
-result = get_tooth_sequences(model=model, img_path=img_path, label_path=label_path)
+def main():
+    #model = YOLO(MODEL_PATH)
 
-final_fdi_labels, assigned_indices = run_viterbi_alignment(
-    result['prob_matrix'],
-    result['jaw_type'],
-    print_dp_path=False
-)
+    img_paths = sorted([p for p in IMG_DIR.iterdir() if p.suffix.lower() in IMG_EXTS])
+    total_imgs = len(img_paths)
 
-print("pred_seq:", result.get("pred_seq"))
-print("gt_seq:", result.get("gt_seq"))
-print("final_fdi_labels:", final_fdi_labels)
+    pred_eq_gt = 0
+    viterbi_eq_gt = 0
+    missing_label = 0
+    errors = 0
+
+    # 若你也想記錄不相等的案例，解除註解這些
+    # bad_pred_cases = []
+    # bad_viterbi_cases = []
+
+    for img_path in img_paths:
+        label_path = LBL_DIR / (img_path.stem + ".txt")
+        if not label_path.exists():
+            missing_label += 1
+            continue
+
+        try:
+            temp_model = YOLO(MODEL_PATH)
+            result = get_tooth_sequences(model=temp_model, img_path=str(img_path), label_path=str(label_path))
+            del temp_model
+
+            pred_seq = result.get("pred_seq")
+            gt_seq = result.get("gt_seq")
+
+            final_fdi_labels, assigned_indices = run_viterbi_alignment(
+                result["prob_matrix"],
+                result["jaw_type"],
+                print_dp_path=False
+            )
+
+            if pred_seq == gt_seq:
+                pred_eq_gt += 1
+            # else:
+            #     bad_pred_cases.append(img_path.name)
+
+            if final_fdi_labels == gt_seq:
+                viterbi_eq_gt += 1
+            # else:
+            #     bad_viterbi_cases.append(img_path.name)
+
+        except Exception as e:
+            errors += 1
+            print(f"[ERROR] {img_path.name}: {e}")
+
+    evaluated = total_imgs - missing_label
+
+    print("\n===== Summary =====")
+    print(f"Total images in val: {total_imgs}")
+    print(f"Missing label files: {missing_label}")
+    print(f"Errors during processing: {errors}")
+    print(f"Evaluated (has label): {evaluated}")
+
+    if evaluated > 0:
+        print(f"\npred_seq == gt_seq: {pred_eq_gt} / {evaluated} ({pred_eq_gt / evaluated:.2%})")
+        print(f"final_fdi_labels == gt_seq: {viterbi_eq_gt} / {evaluated} ({viterbi_eq_gt / evaluated:.2%})")
+    else:
+        print("\nNo images evaluated (check label paths).")
+
+    # 若你想把失敗清單印出來：
+    # print("\nBad pred cases:", bad_pred_cases[:20], "..." if len(bad_pred_cases) > 20 else "")
+    # print("\nBad viterbi cases:", bad_viterbi_cases[:20], "..." if len(bad_viterbi_cases) > 20 else "")
+
+if __name__ == "__main__":
+    main()

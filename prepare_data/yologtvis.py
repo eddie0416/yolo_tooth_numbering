@@ -92,10 +92,10 @@ def visualize_yolo_annotations(image_path, annotation_path, data_yaml,
     print(f"\n視覺化結果已儲存至: {output_path}")
     return output_path
 
-
-output = visualize_yolo_annotations(
-    'yolo_numbering_dataset/dataset_splited_augmented/images/val/Z5SBGG6H_upper.png',
-    'yolo_numbering_dataset/dataset_splited_augmented/labels/val/Z5SBGG6H_upper.txt',
-    'yolo_numbering_dataset/dataset_splited_augmented/data.yaml',
-    'Z5SBGG6H_upper_annotated.png'
-)
+if __name__ == "__main__":
+    output = visualize_yolo_annotations(
+        'yolo_numbering_dataset/dataset_splited_augmented/images/val/Z5SBGG6H_upper.png',
+        'yolo_numbering_dataset/dataset_splited_augmented/labels/val/Z5SBGG6H_upper.txt',
+        'yolo_numbering_dataset/dataset_splited_augmented/data.yaml',
+        'Z5SBGG6H_upper_annotated.png'
+    )
